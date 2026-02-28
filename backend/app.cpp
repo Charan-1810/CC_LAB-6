@@ -19,37 +19,31 @@ int main() {
     bind(server_fd, (struct sockaddr *)&address, sizeof(address));
     listen(server_fd, 3);
 
+    char hostname[1024];
+    gethostname(hostname, sizeof(hostname));
+
+    std::cout << "Server listening on port 8080 (hostname: "
+              << hostname << ")" << std::endl;
+
     while(true) {
-        new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+        new_socket = accept(server_fd,
+                            (struct sockaddr *)&address,
+                            (socklen_t*)&addrlen);
+
+        if (new_socket < 0) continue;
 
         char buffer[1024] = {0};
         read(new_socket, buffer, 1024);
 
         std::string response =
             "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/plain\r\n\r\n"
-            "Served by backend\n";
+            "Content-Type: text/plain\r\n"
+            "Connection: close\r\n\r\n"
+            "Served by backend: " + std::string(hostname) + "\n";
 
         send(new_socket, response.c_str(), response.length(), 0);
         close(new_socket);
     }
-}    
-    std::cout << "Server listening on port 8080 (hostname: " << hostname << ")" << std::endl;
-    
-    // Accept connections in loop
-    while(true) {
-        int client_fd = accept(server_fd, NULL, NULL);
-        if (client_fd < 0) continue;
-        
-        // Simple HTTP response
-        std::string response = "HTTP/1.1 200 OK\r\n";
-        response += "Content-Type: text/plain\r\n";
-        response += "Connection: close\r\n\r\n";
-        response += "Served by backend: " + std::string(hostname) + "\n";
-        
-        send(client_fd, response.c_str(), response.length(), 0);
-        close(client_fd);
-    }
-    
+
     return 0;
 }
